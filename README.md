@@ -1,122 +1,133 @@
 # Lab: Flask Pagination
+**Completed Sept 28, 2026**
 
-## Introduction
+## Description
 
-In this lab, you'll add server-side pagination to an existing Flask API endpoint. Right now, your API returns all books when a client makes a request to /books. That’s fine with 10 entries, but in production systems, this approach can slow down your app and flood the frontend with too much data.
-
-Your goal is to refactor the endpoint to:
-
-* Accept `?page` and `?per_page` query parameters
-* Return only a subset of records
-* Include metadata (like total, page, total_pages) in the response
-
-This mirrors the structure used by APIs across the web from Shopify to Reddit to GitHub.
-
-## Tools & Resources
-
-- [GitHub Repo](https://github.com/learn-co-curriculum/flask-pagination-lab)
-- [Flask SQLAlchemy Docs - paginate](https://flask-sqlalchemy.readthedocs.io/en/stable/pagination/)
-
-## Set Up
-
-The starter code includes a Flask app and seed data for books.
-
-To get started:
-
+A Flask REST API that serves a catalog of books with **server-side pagination**. Instead of returning every record at once, the `/books` endpoint returns one page at a time, along with metadata the frontend can use to build page navigation.
+ 
+![Paginated /books response](flask-pagination-lab.png)
+ 
+## Features
+ 
+- `GET /books` returns a paginated list of books
+- `page` and `per_page` query parameters control which chunk of data is returned
+- Response includes metadata: current page, page size, total records, and total pages
+- Sensible defaults (page 1, 5 per page) when parameters are missing or invalid
+- Out-of-range pages return an empty list instead of an error
+- Books are returned in a consistent order (by `id`) so pages never overlap or skip records
+## Tech Stack
+ 
+- Python 3.8
+- Flask & Flask-RESTful
+- Flask-SQLAlchemy (using `.paginate()`)
+- Flask-Migrate / Alembic
+- Marshmallow (serialization)
+- SQLite
+- Faker (seed data)
+- pytest
+## Installation
+ 
+Clone the repository and install dependencies:
+ 
 ```bash
+git clone https://github.com/hanjennings1/flask-pagination-lab.git
+cd flask-pagination-lab
 pipenv install && pipenv shell
+```
+ 
+Set up the database and seed it with 500 sample books:
+ 
+```bash
 cd server
-flask db init
-flask db migrate -m "initial migration"
 flask db upgrade head
 python seed.py
+```
+ 
+## Usage
+ 
+Start the server from the `server` directory:
+ 
+```bash
 python app.py
 ```
-
-You can view the API in your browser or using Postman. Test pagination by visiting
-http://localhost:5555/books?page=1&per_page=5.
-
-## Instructions
-
-### Task 1: Define the Problem
-
-Your current /books endpoint returns every book in the database. The frontend team wants this replaced with a paginated response that:
-
-* Uses page and per_page query parameters
-* Returns only the requested chunk of data
-* Includes metadata like the total number of pages
-
-### Task 2: Determine the Design
-
-Backend Requirements:
-* Accept `?page=<int>` and `?per_page=<int>` via `request.args`
-* Use `.paginate()` on your SQLAlchemy query
-* Return a structured JSON response like:
-
+ 
+The API runs at `http://localhost:5555`.
+ 
+### Endpoint
+ 
+`GET /books`
+ 
+| Query parameter | Type | Default | Description |
+| --------------- | ---- | ------- | ------------------------------ |
+| `page` | int | `1` | Which page of results to return |
+| `per_page` | int | `5` | Number of books per page |
+ 
+### Examples
+ 
+```
+GET /books
+GET /books?page=2&per_page=3
+GET /books?page=999
+```
+ 
+### Example response
+ 
+`GET /books?page=1&per_page=2`
+ 
 ```json
 {
   "page": 1,
-  "per_page": 5,
-  "total": 30,
-  "total_pages": 6,
+  "per_page": 2,
+  "total": 500,
+  "total_pages": 250,
   "items": [
-    { "id": 1, "title": "Apple Pie" },
-    // ...
+    {
+      "id": 1,
+      "title": "Example book title.",
+      "author": "Jane Doe",
+      "description": "A short description of the book."
+    },
+    {
+      "id": 2,
+      "title": "Another example title.",
+      "author": "John Smith",
+      "description": "Another short description."
+    }
   ]
 }
 ```
-
-### Task 3: Develop, Test, and Refine the Code
-
-#### Step 1: Accept Query Parameters
-
-* page
-* per_page
-
-#### Step 2: Use .paginate() in Your Query
-
-Use the SQLAlchemy `.paginate()` method to get the correct books by the query params.
-
-#### Step 3: Return a Structured Response
-
-Format response with the proper metadata:
-* page
-* per_page
-* total
-* total_pages
-* items
-
-#### Step 4: Test the Pagination Logic
-
-Test routes in browser or Postman. Run the test suite with:
+ 
+| Field | Description |
+| ------------- | ------------------------------------------ |
+| `page` | The current page number |
+| `per_page` | Number of items per page |
+| `total` | Total number of books in the database |
+| `total_pages` | Total number of pages at this page size |
+| `items` | The books on the current page |
+ 
+## Running Tests
+ 
+From the project root:
+ 
 ```bash
 pytest
 ```
-
-#### Step 5: Commit and Push Git History
-
-* Commit and push your code:
-
-```bash
-git add .
-git commit -m "final solution"
-git push
+ 
+The test suite uses an in-memory database seeded with 20 books and checks default pagination, custom page sizes, partial last pages, and out-of-range pages.
+ 
+## Project Structure
+ 
 ```
-
-* If you created a separate feature branch, remember to open a PR on main and merge.
-
-### Task 4: Document and Maintain
-
-Optional Best Practice documentation steps:
-* Add comments to the code to explain purpose and logic, clarifying intent and functionality of your code to other developers.
-* Update README text to reflect the functionality of the application following https://makeareadme.com. 
-  * Add screenshot of completed work included in Markdown in README.
-* Delete any stale branches on GitHub
-* Remove unnecessary/commented out code
-* If needed, update git ignore to remove sensitive data
-
-## Submit Solution
-
-CodeGrade will use the same test suite as the test suite included.
-
-Once all tests are passing, commit and push your work using `git` to submit to CodeGrade through Canvas.
+flask-pagination-lab/
+├── server/
+│   ├── app.py          # Books resource with pagination logic
+│   ├── config.py       # App factory, database and API setup
+│   ├── models.py       # Book model and Marshmallow schema
+│   ├── seed.py         # Seeds the database with fake books
+│   ├── migrations/     # Alembic migration files
+│   └── testing/        # pytest test suite
+├── Pipfile
+├── pytest.ini
+└── README.md
+```
+ 
