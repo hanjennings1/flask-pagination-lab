@@ -20,9 +20,17 @@ class Books(Resource):
             page=page, per_page=per_page, error_out=False
         )
 
-        # TEMPORARY: return just this page's books to confirm paginate works
+        # Serialize just this page's books
         books = [BookSchema().dump(b) for b in pagination.items]
-        return books, 200
+
+        # Return the page of books along with metadata the frontend needs
+        return {
+            "page": pagination.page,
+            "per_page": pagination.per_page,
+            "total": pagination.total,
+            "total_pages": pagination.pages,
+            "items": books,
+        }, 200
 
 
 api.add_resource(Books, '/books', endpoint='books')
