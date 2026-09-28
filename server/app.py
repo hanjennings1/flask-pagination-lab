@@ -8,9 +8,6 @@ import os
 from config import create_app, db, api
 from models import Book, BookSchema
 
-env = os.getenv("FLASK_ENV", "dev")
-app = create_app(env)
-
 class Books(Resource):
     def get(self):
         books = [BookSchema().dump(b) for b in Book.query.all()]
@@ -19,6 +16,8 @@ class Books(Resource):
 
 api.add_resource(Books, '/books', endpoint='books')
 
+env = os.getenv("FLASK_ENV", "dev")
+app = create_app(env)
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
