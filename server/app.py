@@ -14,8 +14,15 @@ class Books(Resource):
         page = request.args.get("page", 1, type=int)
         per_page = request.args.get("per_page", 5, type=int)
 
-        # TEMPORARY: just echo the values back to confirm they're read correctly
-        return {"page": page, "per_page": per_page}, 200
+        # Fetch only the requested page of books, in a consistent order.
+        # error_out=False returns an empty page (not a 404) when page is out of range.
+        pagination = Book.query.order_by(Book.id).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+
+        # TEMPORARY: return just this page's books to confirm paginate works
+        books = [BookSchema().dump(b) for b in pagination.items]
+        return books, 200
 
 
 api.add_resource(Books, '/books', endpoint='books')
